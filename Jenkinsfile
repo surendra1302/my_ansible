@@ -3,7 +3,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        git branch: 'main', credentialsId: 'your_github_credentials', url: 'https://github.com/your_username/your_repository.git'
+        git branch: 'main', credentialsId: 'ansible_key', url: 'https://github.com/your_username/your_repository.git'
       }
     }
     stage('Execute Ansible playbook') {
