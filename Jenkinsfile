@@ -5,7 +5,7 @@ pipeline {
             steps {
                 // Run the Ansible playbook
                 sh '''
-                ansible-playbook -i /home/ubuntu/my_ansible/hosts /home/ubuntu/my_ansible/roles/tomcat.yml
+                ansible-playbook -i /home/ubuntu/my_ansible/hosts /home/ubuntu/my_ansible/tomcat.yml
                 '''
             }
         }
