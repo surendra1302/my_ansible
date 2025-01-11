@@ -1,0 +1,74 @@
+---
+# tasks file for node-exporter
+- name: check if node exporter exists
+  stat:
+    path: "{{ node_exporter_bin }}"
+  register: __check_node_exporter_present
+
+- name: create node exporter user
+  user:
+    name: "{{ node_exporter_user }}"
+    append: true
+    shell: /usr/sbin/nologin
+    system: true
+    create_home: false
+
+- name: create node exporter config dir
+  file:
+    path: "{{ node_exporter_dir_conf }}"
+    state: directory
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_group }}"
+
+      #- name: download node exporter tarball
+      # get_url:
+      # url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+      # dest: "{{ node_exporter_tarball }}"
+      # validate_certs: no
+      # when: not __check_node_exporter_present.stat.exists
+
+      #- name: unarchive node exporter
+      # unarchive:
+      # src: "{{ node_exporter_tarball }}"
+      # dest: /tmp/
+      # remote_src: yes
+      # when: not __check_node_exporter_present.stat.exists
+
+- name: download and unzip node exporter if not exist
+  unarchive: 
+    src: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+    dest: /tmp/
+    remote_src: yes
+    validate_certs: no
+  when: not __check_node_exporter_present.stat.exists
+  
+
+- name: move the binary to the final destination
+  copy:
+   #src: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
+    src: /tmp/
+    dest: "{{ node_exporter_bin }}"
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_group }}"
+    mode: 0755
+  when: not __check_node_exporter_present.stat.exists
+
+- name: clean extracted files
+  file:
+    path: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64/" 
+    state: absent
+
+- name: install node exporter service
+  template:
+    src: node_exporter.service.j2
+    dest: /etc/systemd/system/node_exporter.service
+    owner: root
+    group: root
+    mode: 0644
+  notify: reload_daemon_and_restart_node_exporter
+
+- name: ensure node exporter service is started
+  systemd:
+    name: node_exporter
+    state: started
+    enabled: yes
