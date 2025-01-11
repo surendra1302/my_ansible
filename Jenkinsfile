@@ -1,19 +1,21 @@
 pipeline {
-  agent { label 'ansible' }
-  stages {
-    stage('Checkout') {
-      steps {
-        git branch: 'main', credentialsId: 'ansible_key', url: 'https://github.com/surendra1302/my_ansible.git'
-      }
+    agent any
+    environment {
+        ANSIBLE_USER = 'root' // Replace with Ansible server username
+        ANSIBLE_HOST = 'ip-172-31-14-32' // Replace with Ansible server hostname/IP
+        SSH_CREDENTIALS_ID = 'ansible-ssh-key'
     }
-    stage('Execute Ansible playbook') {
-      steps {
-        ansiblePlaybook(
-          playbook: '/home/ubuntu/roles/tomcat.yml',
-          inventory: '/etc/ansibe/hosts',
-          credentialsId: 'ansible-ssh-key'
-        )
-      }
+    stages {
+        stage('Run Ansible Playbook') {
+            steps {
+                sshagent(credentials: [env.SSH_CREDENTIALS_ID]) {
+                    sh '''
+                    ssh -o StrictHostKeyChecking=no $ANSIBLE_USER@$ANSIBLE_HOST "
+                        ansible-playbook /home/ubuntu/roles/tomcat.yml -i /etc/ansible/hosts
+                    "
+                    '''
+                }
+            }
+        }
     }
-  }
 }
